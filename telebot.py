@@ -1,6 +1,6 @@
 import os
 import time
-
+import logging
 import requests
 import telegram
 
@@ -33,6 +33,7 @@ def send_message(devman_response, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID
 
 
 def main():
+    logging.warning("bot started")
     timestamp = time.time()-86400*6
     while True:
         try:
