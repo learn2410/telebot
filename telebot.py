@@ -1,6 +1,7 @@
+import logging
 import os
 import time
-import logging
+
 import requests
 import telegram
 
@@ -12,29 +13,38 @@ REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 LONGPOLLING_URL = 'https://dvmn.org/api/long_polling/'
 
 
-def send_message(devman_response, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
-    bot = telegram.Bot(token=token)
-    name = 'Hi'
-    for post in bot.get_updates():
-        if post.message.from_user.id == chat_id:
-            name = post.message.from_user.name
-            break
+class TelegramLogsHandler(logging.Handler):
+
+    def __init__(self, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
+        super().__init__()
+        self.chat_id = chat_id
+        self.bot = telegram.Bot(token=token)
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.bot.send_message(text=log_entry, chat_id=self.chat_id, parse_mode=telegram.ParseMode.MARKDOWN)
+
+
+def prepare_message(devman_response):
     lesson_title = devman_response['lesson_title']
     lesson_url = devman_response['lesson_url']
-    submitted_at = devman_response['submitted_at'][:16].replace('T',' ')
-    result_text = 'Unfortunately, there were errors in the work.' if devman_response['is_negative']\
+    submitted_at = devman_response['submitted_at'][:16].replace('T', ' ')
+    result_text = 'Unfortunately, there were errors in the work.' if devman_response['is_negative'] \
         else 'The teacher liked everything, you can proceed to the next lesson!'
     message_text = f'''\
-    {name}, your work is checked at {submitted_at}\r
+    Hi, your work is checked at {submitted_at}\r
     *work name:* ["{lesson_title}"]({lesson_url})\r
     *result:* {result_text}\n 
     '''
-    bot.send_message(text=message_text, chat_id=int(chat_id),parse_mode=telegram.ParseMode.MARKDOWN)
+    return message_text
 
 
 def main():
-    logging.warning("bot started")
-    timestamp = time.time()-86400*6
+    logger = logging.getLogger('telegram')
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(TelegramLogsHandler(token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID))
+    logger.warning("# Bot started.")
+    timestamp = time.time()
     while True:
         try:
             response = requests.get(LONGPOLLING_URL, allow_redirects=False, timeout=120,
@@ -48,11 +58,15 @@ def main():
             elif checked_tasks['status'] == 'found':
                 timestamp = checked_tasks['last_attempt_timestamp']
                 for attempt in checked_tasks['new_attempts']:
-                    send_message(attempt)
+                    logger.warning(prepare_message(attempt))
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
             time.sleep(60)
+        except Exception as error:
+            logger.error(f'# Unexpected exception: "{error}" ({error.__class__.__name__})')
+            break
+    logger.warning("# Bot stopped.")
 
 
 if __name__ == '__main__':
