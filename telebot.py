@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import sys,traceback
 
 import requests
 import telegram
@@ -21,8 +22,15 @@ class TelegramLogsHandler(logging.Handler):
         self.bot = telegram.Bot(token=token)
 
     def emit(self, record):
-        log_entry = self.format(record)
-        self.bot.send_message(text=log_entry, chat_id=self.chat_id, parse_mode=telegram.ParseMode.MARKDOWN)
+        if  record.exc_info:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.bot.send_message(
+                text=f'# Exception: {exc_type.__name__} ({exc_value})\n{"".join(traceback.format_tb(exc_traceback))}',
+                chat_id=self.chat_id)
+        else:
+            self.bot.send_message(text=self.format(record),
+                                  chat_id=self.chat_id,
+                                  parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def prepare_message(devman_response):
@@ -38,6 +46,14 @@ def prepare_message(devman_response):
     '''
     return message_text
 
+def send_message(devman_response, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
+    bot = telegram.Bot(token=token)
+    bot.send_message(text=prepare_message(devman_response),
+                     chat_id=int(chat_id),
+                     parse_mode=telegram.ParseMode.MARKDOWN)
+
+def zerodiv():
+    return 5/0
 
 def main():
     logger = logging.getLogger('telegram')
@@ -58,14 +74,14 @@ def main():
             elif checked_tasks['status'] == 'found':
                 timestamp = checked_tasks['last_attempt_timestamp']
                 for attempt in checked_tasks['new_attempts']:
-                    logger.warning(prepare_message(attempt))
+                    send_message(attempt)
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
             time.sleep(60)
         except Exception as error:
-            logger.error(f'# Unexpected exception: "{error}" ({error.__class__.__name__})')
-            break
+            logger.error('# Unexpected exception',exc_info=True)
+            time.sleep(60)
     logger.warning("# Bot stopped.")
 
 
