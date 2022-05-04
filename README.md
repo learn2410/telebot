@@ -11,4 +11,11 @@ You must already have Python 3 installed to run the bot.
     `TELEGRAM_CHAT_ID` - your telegram chat id  
     `DEVMAN_TOKEN` - your token on devman.org  
        
-- Start the server with `python3 telebot.py`
+- Start the server with `python3 telebot.py`  
+
+## Project Goals
+
+Learning to develop chatbots
+
+The code is written for educational purposes - this is a lesson in the course on Python and web development on the [Devman] site (https://dvmn.org).
+
