@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-import traceback
 
 import requests
 import telegram
@@ -24,8 +23,8 @@ class TelegramLogsHandler(logging.Handler):
         self.bot = bot
 
     def emit(self, record):
-        log_entry =f'# {self.format(record)}'
-        self.bot.send_message(text=log_entry,chat_id=self.chat_id)
+        log_entry = f'# {self.format(record)}'
+        self.bot.send_message(text=log_entry, chat_id=self.chat_id)
 
 
 def prepare_message(attempt):
@@ -41,8 +40,6 @@ def prepare_message(attempt):
     '''
     return message_text
 
-# def test_error():
-#     return 2/0
 
 def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -52,7 +49,6 @@ def main():
     timestamp = time.time()
     while True:
         try:
-            # test_error()
             response = requests.get(LONGPOLLING_URL, allow_redirects=False, timeout=120,
                                     headers={'Authorization': DEVMAN_TOKEN}, params={'timestamp': timestamp})
             response.raise_for_status()
@@ -73,7 +69,7 @@ def main():
             time.sleep(60)
         except Exception:
             logger.exception('Unexpected exception')
-            break
+            time.sleep(60)
     logger.warning("Bot stopped.")
 
 
