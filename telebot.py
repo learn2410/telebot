@@ -36,11 +36,11 @@ class TelegramLogsHandler(logging.Handler):
                                   chat_id=self.chat_id)
 
 
-def prepare_message(devman_response):
-    lesson_title = devman_response['lesson_title']
-    lesson_url = devman_response['lesson_url']
-    submitted_at = devman_response['submitted_at'][:16].replace('T', ' ')
-    result_text = 'Unfortunately, there were errors in the work.' if devman_response['is_negative'] \
+def prepare_message(attempt):
+    lesson_title = attempt['lesson_title']
+    lesson_url = attempt['lesson_url']
+    submitted_at = attempt['submitted_at'][:16].replace('T', ' ')
+    result_text = 'Unfortunately, there were errors in the work.' if attempt['is_negative'] \
         else 'The teacher liked everything, you can proceed to the next lesson!'
     message_text = f'''\
     Hi, your work is checked at {submitted_at}\r
@@ -48,13 +48,6 @@ def prepare_message(devman_response):
     *result:* {result_text}\n 
     '''
     return message_text
-
-
-# def send_message(devman_response, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
-#     bot = telegram.Bot(token=token)
-#     bot.send_message(text=prepare_message(devman_response),
-#                      chat_id=int(chat_id),
-#                      parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def main():
