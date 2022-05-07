@@ -1,7 +1,7 @@
 # Telebot
 telegram bot - reports the result of checking homework on Devman.org by Telegram
 
-##Run bot
+## Run bot
 You must already have Python 3 installed to run the bot.
 
 - Download code
@@ -17,5 +17,5 @@ You must already have Python 3 installed to run the bot.
 
 Learning to develop chatbots
 
-The code is written for educational purposes - this is a lesson in the course on Python and web development on the [Devman] site (https://dvmn.org).
+The code is written for educational purposes - this is a lesson in the course on Python and web development on the [Devman](https://dvmn.org).
 

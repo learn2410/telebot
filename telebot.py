@@ -13,13 +13,15 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 REVIEWS_URL = 'https://dvmn.org/api/user_reviews/'
 LONGPOLLING_URL = 'https://dvmn.org/api/long_polling/'
 
+logger = logging.getLogger('telegram')
+
 
 class TelegramLogsHandler(logging.Handler):
 
-    def __init__(self, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
+    def __init__(self, bot, chat_id=TELEGRAM_CHAT_ID):
         super().__init__()
         self.chat_id = chat_id
-        self.bot = telegram.Bot(token=token)
+        self.bot = bot
 
     def emit(self, record):
         log_prefix = '#'
@@ -48,21 +50,22 @@ def prepare_message(devman_response):
     return message_text
 
 
-def send_message(devman_response, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
-    bot = telegram.Bot(token=token)
-    bot.send_message(text=prepare_message(devman_response),
-                     chat_id=int(chat_id),
-                     parse_mode=telegram.ParseMode.MARKDOWN)
+# def send_message(devman_response, token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID):
+#     bot = telegram.Bot(token=token)
+#     bot.send_message(text=prepare_message(devman_response),
+#                      chat_id=int(chat_id),
+#                      parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def main():
-    logger = logging.getLogger('telegram')
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     logger.setLevel(logging.WARNING)
-    logger.addHandler(TelegramLogsHandler(token=TELEGRAM_TOKEN, chat_id=TELEGRAM_CHAT_ID))
+    logger.addHandler(TelegramLogsHandler(bot, chat_id=TELEGRAM_CHAT_ID))
     logger.warning("Bot started.")
     timestamp = time.time()
     while True:
         try:
+            # x=2/0
             response = requests.get(LONGPOLLING_URL, allow_redirects=False, timeout=120,
                                     headers={'Authorization': DEVMAN_TOKEN}, params={'timestamp': timestamp})
             response.raise_for_status()
@@ -74,7 +77,9 @@ def main():
             elif checked_tasks['status'] == 'found':
                 timestamp = checked_tasks['last_attempt_timestamp']
                 for attempt in checked_tasks['new_attempts']:
-                    send_message(attempt)
+                    bot.send_message(text=prepare_message(attempt),
+                                     chat_id=int(TELEGRAM_CHAT_ID),
+                                     parse_mode=telegram.ParseMode.MARKDOWN)
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
