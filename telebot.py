@@ -24,16 +24,8 @@ class TelegramLogsHandler(logging.Handler):
         self.bot = bot
 
     def emit(self, record):
-        log_prefix = '#'
-        if record.exc_info:
-            exc_type, exc_value, exc_traceback = record.exc_info
-            log_text = f'Exception: {exc_type.__name__} ({exc_value})\n{"".join(traceback.format_tb(exc_traceback))}'
-            self.bot.send_message(
-                text=f'{log_prefix} {log_text}',
-                chat_id=self.chat_id)
-        else:
-            self.bot.send_message(text=f'{log_prefix} {self.format(record)}',
-                                  chat_id=self.chat_id)
+        log_entry =f'# {self.format(record)}'
+        self.bot.send_message(text=log_entry,chat_id=self.chat_id)
 
 
 def prepare_message(attempt):
@@ -49,6 +41,8 @@ def prepare_message(attempt):
     '''
     return message_text
 
+# def test_error():
+#     return 2/0
 
 def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -58,7 +52,7 @@ def main():
     timestamp = time.time()
     while True:
         try:
-            # x=2/0
+            # test_error()
             response = requests.get(LONGPOLLING_URL, allow_redirects=False, timeout=120,
                                     headers={'Authorization': DEVMAN_TOKEN}, params={'timestamp': timestamp})
             response.raise_for_status()
@@ -78,7 +72,7 @@ def main():
         except requests.exceptions.ConnectionError:
             time.sleep(60)
         except Exception:
-            logger.error('', exc_info=True)
+            logger.exception('Unexpected exception')
             break
     logger.warning("Bot stopped.")
 
